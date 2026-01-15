@@ -6,6 +6,6 @@
   },
   "dependencies": {
     "puppeteer": "^22.0.0",
-    "google-spreadsheet": "^4.1.0"
+    "google-spreadsheet": "^3.3.0"
   }
 }
