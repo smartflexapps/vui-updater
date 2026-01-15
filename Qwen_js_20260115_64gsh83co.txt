@@ -1,0 +1,60 @@
+// updateVUI.js
+const puppeteer = require('puppeteer');
+const { GoogleSpreadsheet } = require('google-spreadsheet');
+
+async function updateVUI() {
+  // === 1. SCRAPEAR EL VUI ===
+  const browser = await puppeteer.launch({ headless: true });
+  const page = await browser.newPage();
+  await page.goto('https://www.per-capital.com/fondos', { waitUntil: 'networkidle2' });
+
+  const vuiText = await page.$eval(
+    'div.mt-6.text-4xl.md\\:text-3xl.lg\\:text-5xl.font-extrabold.flex.items-center.justify-center.gap-3 > span',
+    el => el.textContent.trim()
+  );
+
+  await browser.close();
+
+  if (!vuiText || !vuiText.startsWith('Bs.')) {
+    throw new Error('VUI no encontrado: ' + vuiText);
+  }
+
+  // Limpiar: Bs.228,45 → 228.45
+  const vui = parseFloat(
+    vuiText
+      .replace('Bs.', '')
+      .replace(/\./g, '')
+      .replace(',', '.')
+  );
+
+  const date = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+
+  console.log(`[${date}] VUI = ${vui}`);
+
+  // === 2. ACTUALIZAR GOOGLE SHEETS (solo celdas A2 y B2) ===
+  const doc = new GoogleSpreadsheet(process.env.SHEET_ID);
+  await doc.useServiceAccountAuth({
+    client_email: process.env.GOOGLE_CLIENT_EMAIL,
+    private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+  });
+
+  await doc.loadInfo();
+  const sheet = doc.sheetsByTitle['VUI']; // Nombre exacto de la pestaña
+
+  if (!sheet) {
+    throw new Error('No se encontró la pestaña "VUI"');
+  }
+
+  // Sobrescribir solo A2 y B2
+  await sheet.loadCells('A1:B2');
+  sheet.getCellByA1('A2').value = date;
+  sheet.getCellByA1('B2').value = vui;
+  await sheet.saveUpdatedCells();
+
+  console.log('✅ Celdas A2 y B2 actualizadas');
+}
+
+updateVUI().catch(err => {
+  console.error('❌ Error:', err.message);
+  process.exit(1);
+});
