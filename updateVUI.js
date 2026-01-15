@@ -4,7 +4,15 @@ const { GoogleSpreadsheet } = require('google-spreadsheet');
 
 async function updateVUI() {
   // === 1. SCRAPEAR EL VUI ===
-  const browser = await puppeteer.launch({ headless: true });
+  const browser = await puppeteer.launch({
+  headless: true,
+  args: [
+    '--no-sandbox',
+    '--disable-setuid-sandbox',
+    '--disable-dev-shm-usage',
+    '--disable-gpu'
+  ]
+});
   const page = await browser.newPage();
   await page.goto('https://www.per-capital.com/fondos', { waitUntil: 'networkidle2' });
 
