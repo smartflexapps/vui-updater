@@ -41,10 +41,10 @@ async function updateVUI() {
 
   // === 2. ACTUALIZAR GOOGLE SHEETS (solo celdas A2 y B2) ===
   const doc = new GoogleSpreadsheet(process.env.SHEET_ID);
-  await doc.useServiceAccountAuth({
-    client_email: process.env.GOOGLE_CLIENT_EMAIL,
-    private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-  });
+await doc.useServiceAccountKey({
+  client_email: process.env.GOOGLE_CLIENT_EMAIL,
+  private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+});
 
   await doc.loadInfo();
   const sheet = doc.sheetsByTitle['VUI']; // Nombre exacto de la pestaña
