@@ -23,11 +23,25 @@ async function updateVUI() {
     const page = await browser.newPage();
     await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
 
-    // === 2. Navegar con mayor tolerancia ===
-    await page.goto('https://www.per-capital.com/fondos', {
-      waitUntil: 'domcontentloaded', // más rápido y fiable que networkidle2
-      timeout: 60000 // 60 segundos
-    });
+    // Navegar
+await page.goto('https://www.per-capital.com/fondos', {
+  waitUntil: 'domcontentloaded',
+  timeout: 60000
+});
+
+// Esperar a que aparezca el valor
+await page.waitForFunction(
+  () => document.body.innerText.includes('Bs.'),
+  { timeout: 45000 }
+);
+
+// Extraer con regex
+const vuiText = await page.evaluate(() => {
+  const match = document.body.innerText.match(/Bs\.\s*[\d.,]+/);
+  return match ? match[0].trim() : null;
+});
+
+if (!vuiText) throw new Error('VUI no encontrado en la página');
 
     // === 3. Extraer el VUI ===
     const vuiText = await page.$eval(
