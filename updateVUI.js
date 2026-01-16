@@ -24,15 +24,11 @@ async function updateVUI() {
       timeout: 60000
     });
 
-    // ✅ Usar XPath directo
-    await page.waitForXPath('/html/body/main/section/div/div[1]/article/div/div/div[1]/div[1]/span', { timeout: 45000 });
-    const [vuiElement] = await page.$x('/html/body/main/section/div/div[1]/article/div/div/div[1]/div[1]/span');
-    
-    if (!vuiElement) {
-      throw new Error('No se encontró el elemento VUI por XPath');
-    }
+    // ✅ Selector CSS completo y preciso
+    const selector = 'body > main > section > div > div:nth-child(2) > article > div > div > div:nth-child(1) > div.mt-6.text-4xl.md\\:text-3xl.lg\\:text-5xl.font-extrabold.flex.items-center.justify-center.gap-3 > span';
 
-    const vuiText = await page.evaluate(el => el.textContent.trim(), vuiElement);
+    await page.waitForSelector(selector, { timeout: 45000 });
+    const vuiText = await page.$eval(selector, el => el.textContent.trim());
 
     if (!vuiText || !vuiText.startsWith('Bs.')) {
       throw new Error('VUI inválido: ' + vuiText);
