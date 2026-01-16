@@ -2,7 +2,7 @@ name: Update VUI Daily
 
 on:
   schedule:
-    - cron: '0 00 * * *'  # 12:00 UTC (ajusta si necesitas otra hora)
+    - cron: '0 0 * * *'  # 20:00 UTC-4 (ajusta si necesitas otra hora)
   workflow_dispatch:        # permite ejecutar manualmente
 
 jobs:
