@@ -43,16 +43,6 @@ const vuiText = await page.evaluate(() => {
 
 if (!vuiText) throw new Error('VUI no encontrado en la página');
 
-    // === 3. Extraer el VUI ===
-    const vuiText = await page.$eval(
-      'div.mt-6.text-4xl.md\\:text-3xl.lg\\:text-5xl.font-extrabold.flex.items-center.justify-center.gap-3 > span',
-      el => el.textContent.trim()
-    );
-
-    if (!vuiText || !vuiText.startsWith('Bs.')) {
-      throw new Error('VUI no encontrado: ' + vuiText);
-    }
-
     // Limpiar formato: Bs.228,45 → 228.45
     const vui = parseFloat(
       vuiText
