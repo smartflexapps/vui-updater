@@ -23,27 +23,40 @@ async function updateVUI() {
     const page = await browser.newPage();
     await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
 
-    // Navegar
-await page.goto('https://www.per-capital.com/fondos', {
-  waitUntil: 'domcontentloaded',
-  timeout: 60000
-});
+    // === 2. Navegar a la página ===
+    await page.goto('https://www.per-capital.com/fondos', {
+      waitUntil: 'domcontentloaded',
+      timeout: 60000
+    });
 
-// Esperar a que aparezca el valor
-await page.waitForFunction(
-  () => document.body.innerText.includes('Bs.'),
-  { timeout: 45000 }
-);
+    // === 3. Esperar y extraer el VUI de forma precisa ===
+    await page.waitForFunction(
+      () => document.body.innerText.includes('VUI') && document.body.innerText.includes('Bs.'),
+      { timeout: 45000 }
+    );
 
-// Extraer con regex
-const vuiText = await page.evaluate(() => {
-  const match = document.body.innerText.match(/Bs\.\s*[\d.,]+/);
-  return match ? match[0].trim() : null;
-});
+    const vuiText = await page.evaluate(() => {
+      const bodyText = document.body.innerText;
+      const lines = bodyText.split('\n').map(line => line.trim()).filter(line => line);
+      
+      // Encontrar la línea que dice exactamente "VUI"
+      const vuiIndex = lines.findIndex(line => line === 'VUI');
+      if (vuiIndex === -1) return null;
 
-if (!vuiText) throw new Error('VUI no encontrado en la página');
+      // Buscar el primer valor "Bs." después de "VUI"
+      for (let i = vuiIndex + 1; i < lines.length; i++) {
+        if (lines[i].startsWith('Bs.')) {
+          return lines[i];
+        }
+      }
+      return null;
+    });
 
-    // Limpiar formato: Bs.228,45 → 228.45
+    if (!vuiText) {
+      throw new Error('No se encontró el VUI después del texto "VUI"');
+    }
+
+    // === 4. Limpiar y convertir el valor ===
     const vui = parseFloat(
       vuiText
         .replace('Bs.', '')
@@ -54,7 +67,7 @@ if (!vuiText) throw new Error('VUI no encontrado en la página');
     const date = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
     console.log(`[${date}] VUI = ${vui}`);
 
-    // === 4. Actualizar Google Sheets ===
+    // === 5. Actualizar Google Sheets ===
     const doc = new GoogleSpreadsheet(process.env.SHEET_ID);
     await doc.useServiceAccountAuth({
       client_email: process.env.GOOGLE_CLIENT_EMAIL,
