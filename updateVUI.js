@@ -1,4 +1,3 @@
-/ updateVUI.js
 const puppeteer = require('puppeteer');
 const { GoogleSpreadsheet } = require('google-spreadsheet');
 
