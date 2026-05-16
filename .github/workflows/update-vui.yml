@@ -2,23 +2,23 @@ name: Update VUI Daily
 
 on:
   schedule:
-    - cron: '0 0 * * *'  # 20:00 UTC-4 (ajusta si necesitas otra hora)
-  workflow_dispatch:        # permite ejecutar manualmente
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   update:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-
       - name: Install dependencies
         run: npm install
-
       - name: Run updater
         env:
           SHEET_ID: ${{ secrets.SHEET_ID }}
