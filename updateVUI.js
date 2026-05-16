@@ -18,27 +18,45 @@ async function updateVUI() {
     const page = await browser.newPage();
     await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
 
-    await page.goto('https://www.per-capital.com/fondos', {
-      waitUntil: 'domcontentloaded',
+    // NUEVA URL
+    await page.goto('https://www.per-capital.com/fondos/abierto', {
+      waitUntil: 'networkidle2', // Espera a que cargue el contenido dinámico
       timeout: 60000
     });
 
-    // ✅ Selector CSS completo y preciso
-    const selector = 'body > main > section > div > div:nth-child(2) > article > div > div > div:nth-child(1) > div.mt-6.text-4xl.md\\:text-3xl.lg\\:text-5xl.font-extrabold.flex.items-center.justify-center.gap-3 > span';
+    // Espera a que aparezca el texto "Precio de la Unidad de Inversión"
+    await page.waitForFunction(
+      () => document.body.innerText.includes('Precio de la Unidad de Inversión'),
+      { timeout: 30000 }
+    );
+    console.log('✅ Texto "Precio de la Unidad de Inversión" encontrado.');
 
-    await page.waitForSelector(selector, { timeout: 45000 });
-    const vuiText = await page.$eval(selector, el => el.textContent.trim());
+    // Extrae el valor usando expresión regular (busca Bs. 123.456,78 o Bs.123,45)
+    const vuiText = await page.evaluate(() => {
+      const bodyText = document.body.innerText;
+      const match = bodyText.match(/Bs\.?\s*(\d{1,3}(?:\.\d{3})*,\d{2})/);
+      return match ? match[0] : null;
+    });
 
-    if (!vuiText || !vuiText.startsWith('Bs.')) {
-      throw new Error('VUI inválido: ' + vuiText);
+    if (!vuiText) {
+      throw new Error('No se pudo encontrar el valor del VUI con el patrón de búsqueda.');
     }
 
-    const vui = parseFloat(
-      vuiText
-        .replace('Bs.', '')
-        .replace(/\./g, '')
-        .replace(',', '.')
-    );
+    console.log(`Valor VUI encontrado (crudo): ${vuiText}`);
+
+    // Limpiar el texto para obtener el número
+    let vuiNumero = vuiText
+      .replace('Bs.', '')
+      .replace('Bs', '')
+      .trim()
+      .replace(/\./g, '')   // quita puntos de miles
+      .replace(',', '.');   // cambia coma decimal a punto
+
+    const vui = parseFloat(vuiNumero);
+
+    if (isNaN(vui)) {
+      throw new Error(`No se pudo convertir "${vuiText}" a número.`);
+    }
 
     const date = new Date().toISOString().split('T')[0];
     console.log(`[${date}] VUI = ${vui}`);
